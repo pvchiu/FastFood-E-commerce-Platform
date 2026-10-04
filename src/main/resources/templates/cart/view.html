@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+  <head th:replace="fragments/layout :: head">
+    <title>Shopping Cart - FastFood App</title>
+  </head>
+
+  <body>
+    <!-- Navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+
+    <!-- Page Header -->
+    <section class="page-header bg-light py-4">
+      <div class="container">
+        <h1 class="h2 mb-0">
+          <i class="fas fa-shopping-cart me-2"></i>Your Shopping Cart
+        </h1>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+            <li class="breadcrumb-item">
+              <a th:href="@{/products}">Products</a>
+            </li>
+            <li class="breadcrumb-item active">Shopping Cart</li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+
+    <!-- Cart Content -->
+    <section class="cart-section py-5">
+      <div class="container">
+        <!-- Cart with items -->
+        <div id="cart-with-items">
+          <div class="row">
+            <!-- Cart Items -->
+            <div class="col-lg-8">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Items in Your Cart
+                    <span
+                      class="badge bg-primary ms-2"
+                      id="cart-count"
+                      th:text="${#lists.size(cartItems)}"
+                      >0</span
+                    >
+                  </h5>
+                </div>
+                <div class="card-body p-0">
+                  <div
+                    class="cart-item border-bottom p-3"
+                    th:each="item : ${cartItems}"
+                    th:data-item-id="${item.id}"
+                  >
+                    <div class="row align-items-center">
+                      <div class="col-md-2">
+                        <img
+                          th:src="@{'/' + ${item.product.imageUrl}}"
+                          class="img-fluid rounded"
+                          th:alt="${item.product.name}"
+                          style="height: 80px; object-fit: cover"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <h6 class="mb-1" th:text="${item.product.name}">
+                          Product Name
+                        </h6>
+                        <small
+                          class="text-muted"
+                          th:text="${item.product.description}"
+                          >Product Description</small
+                        >
+                      </div>
+                      <div class="col-md-2">
+                        <!-- Fix: Add th: prefix to data-product-id -->
+                        <div
+                          class="cart-item input-group input-group-sm"
+                          th:data-product-id="${item.product.id}"
+                        >
+                          <button
+                            class="btn btn-outline-secondary qty-decrease"
+                            type="button"
+                          >
+                            <i class="fas fa-minus"></i>
+                          </button>
+                          <input
+                            type="text"
+                            class="form-control text-center qty-input"
+                            th:value="${item.quantity}"
+                            readonly
+                          />
+                          <button
+                            class="btn btn-outline-secondary qty-increase"
+                            type="button"
+                          >
+                            <i class="fas fa-plus"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="col-md-2">
+                        <span
+                          class="fw-bold text-primary item-price"
+                          th:data-unit-price="${item.product.price}"
+                          th:text="'$' + ${#numbers.formatDecimal(item.product.price, 1, 2)}"
+                          >Total
+                        </span>
+                      </div>
+                      <div class="col-md-2 text-end">
+                        <!-- Fix: Use th: prefix for data-product-id -->
+                        <button
+                          class="btn btn-danger btn-sm remove-item"
+                          th:data-product-id="${item.product.id}"
+                        >
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Continue Shopping -->
+              <div class="mt-3">
+                <a th:href="@{/products}" class="btn btn-outline-primary">
+                  <i class="fas fa-arrow-left me-2"></i>Continue Shopping
+                </a>
+              </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0">
+                    <i class="fas fa-calculator me-2"></i>Order Summary
+                  </h5>
+                </div>
+                <div class="card-body">
+                  <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span
+                      id="subtotal"
+                      th:text="${#numbers.formatDecimal(subtotal, 1, 2)} + ' $'"
+                      >0.00 $</span
+                    >
+                  </div>
+
+                  <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping Fee:</span>
+                    <span
+                      id="shipping-fee"
+                      th:text="${#numbers.formatDecimal(shippingFee, 1, 2)} + ' $'"
+                      >1.20 $</span
+                    >
+                  </div>
+
+                  <!-- <div class="d-flex justify-content-between mb-2">
+                    <span>Discount:</span>
+                    <span
+                      id="discount"
+                      class="text-success"
+                      th:text="'-' + ${#numbers.formatDecimal(discount, 1, 2)} + ' $'"
+                      >-0.00 $</span
+                    >
+                  </div> -->
+
+                  <hr />
+
+                  <div class="d-flex justify-content-between mb-3">
+                    <strong>Total:</strong>
+                    <strong
+                      class="text-primary"
+                      id="total"
+                      th:text="${#numbers.formatDecimal(totalAmount, 1, 2)} + ' $'"
+                    >
+                      $0.00
+                    </strong>
+                  </div>
+
+                  <!-- Checkout Button -->
+                  <form
+                    id="checkoutForm"
+                    method="get"
+                    action="/checkout"
+                    th:data-count="${cartItems.size()}"
+                  >
+                    <button type="submit" class="btn btn-primary w-100 btn-lg">
+                      <i class="fas fa-credit-card me-2"></i>Checkout
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Security Info -->
+              <div class="card mt-3">
+                <div class="card-body text-center">
+                  <i
+                    class="fas fa-shield-alt text-success mb-2"
+                    style="font-size: 2rem"
+                  ></i>
+                  <h6>Secure Payment</h6>
+                  <small class="text-muted"
+                    >Your information is protected by 256-bit SSL</small
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty Cart State -->
+        <div id="empty-cart" class="text-center py-5" style="display: none">
+          <i
+            class="fas fa-shopping-cart text-muted mb-3"
+            style="font-size: 5rem; opacity: 0.3"
+          ></i>
+          <h3 class="text-muted">Your cart is empty</h3>
+          <p class="text-muted mb-4">You have no items in your cart yet</p>
+          <a th:href="@{/products}" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Confirmation Modal -->
+    <div
+      class="modal fade"
+      id="deleteConfirmModal"
+      tabindex="-1"
+      aria-labelledby="deleteConfirmModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-danger text-white border-0">
+            <h5 class="modal-title" id="deleteConfirmModalLabel">
+              <i class="fas fa-exclamation-triangle me-2"></i>Remove Item
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="d-flex align-items-center">
+              <div class="me-3">
+                <div
+                  class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center"
+                  style="width: 50px; height: 50px"
+                >
+                  <i class="fas fa-trash text-danger"></i>
+                </div>
+              </div>
+              <div>
+                <h6 class="mb-1">Remove from cart?</h6>
+                <p class="text-muted mb-0">
+                  Are you sure you want to remove "<span
+                    id="productNameToDelete"
+                    class="fw-bold text-dark"
+                  ></span
+                  >" from your shopping cart? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+              <i class="fas fa-times me-2"></i>Cancel
+            </button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+              <i class="fas fa-trash me-2"></i>Remove Item
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Quantity increase handlers
+        document.querySelectorAll(".qty-increase").forEach((button) => {
+          button.addEventListener("click", function () {
+            const container = this.closest("[data-product-id]");
+            const productId = container.getAttribute("data-product-id");
+            const input = container.querySelector(".qty-input");
+            let quantity = parseInt(input.value);
+            quantity++;
+
+            updateQuantity(productId, quantity, input);
+          });
+        });
+
+        // Quantity decrease handlers
+        document.querySelectorAll(".qty-decrease").forEach((button) => {
+          button.addEventListener("click", function () {
+            const container = this.closest("[data-product-id]");
+            const productId = container.getAttribute("data-product-id");
+            const input = container.querySelector(".qty-input");
+            let quantity = parseInt(input.value);
+            if (quantity > 1) {
+              quantity--;
+              updateQuantity(productId, quantity, input);
+            }
+          });
+        });
+
+        // Remove item handlers
+        document.querySelectorAll(".remove-item").forEach((button) => {
+          button.addEventListener("click", function () {
+            const productId = this.getAttribute("data-product-id");
+            const productName = this.closest(".row")
+              .querySelector("h6")
+              .textContent.trim();
+
+            // Set product name in modal
+            document.getElementById("productNameToDelete").textContent =
+              productName;
+
+            // Store productId for deletion
+            document
+              .getElementById("confirmDeleteBtn")
+              .setAttribute("data-product-id", productId);
+
+            // Show modal
+            const modal = new bootstrap.Modal(
+              document.getElementById("deleteConfirmModal")
+            );
+            modal.show();
+          });
+        });
+
+        // Handle confirm delete
+        document
+          .getElementById("confirmDeleteBtn")
+          .addEventListener("click", function () {
+            const productId = this.getAttribute("data-product-id");
+            const modal = bootstrap.Modal.getInstance(
+              document.getElementById("deleteConfirmModal")
+            );
+            modal.hide();
+
+            removeItem(productId);
+          });
+
+        // Update quantity function
+        function updateQuantity(productId, quantity, inputField) {
+          fetch(`/cart/update?productId=${productId}&quantity=${quantity}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.text();
+            })
+            .then((text) => {
+              if (text === "ok") {
+                inputField.value = quantity;
+                location.reload();
+              } else {
+                alert("Update failed: " + text);
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("An error occurred while updating quantity");
+            });
+        }
+
+        // Remove item function
+        function removeItem(productId) {
+          fetch(`/cart/remove?productId=${productId}`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          })
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error("Network response was not ok");
+              }
+              return response.text();
+            })
+            .then((text) => {
+              if (text === "ok") {
+                location.reload();
+              } else {
+                alert("Delete failed: " + text);
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("An error occurred while deleting product");
+            });
+        }
+      });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("checkoutForm");
+        const cartItemCount = parseInt(form.getAttribute("data-count"), 10);
+
+        form.addEventListener("submit", function (e) {
+          if (cartItemCount === 0) {
+            e.preventDefault(); 
+            alert(
+              "Your cart is empty. Please add items before checking out."
+            );
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

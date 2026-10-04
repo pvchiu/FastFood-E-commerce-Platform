@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <!-- Thêm meta tag để truyền role từ server -->
+   <meta name="user-role" th:content="${#authentication.authorities[0].authority}" sec:authorize="isAuthenticated()" />
+   <meta name="user-role" content="ROLE_ANONYMOUS" sec:authorize="isAnonymous()" />
+
+   <link rel="icon" href="/images/b.png" type="image/png" />
+   <title>Order Management - Admin</title>
+
+   <!-- Bootstrap CSS -->
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+   <!-- Font Awesome -->
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+   <!-- Custom CSS -->
+   <link th:href="@{/css/style.css}" rel="stylesheet" />
+   <!-- SweetAlert2 for confirmation dialogs -->
+   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+   <style>
+      :root {
+         --primary-color: #2563eb;
+         --secondary-color: #64748b;
+         --success-color: #059669;
+         --warning-color: #d97706;
+         --danger-color: #dc2626;
+         --background-color: #f8fafc;
+         --card-bg: #ffffff;
+         --text-primary: #1e293b;
+         --text-secondary: #64748b;
+         --border-color: #e2e8f0;
+         --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+         --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+         --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      }
+
+      body {
+         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+         background: var(--background-color);
+         color: var(--text-primary);
+         line-height: 1.6;
+      }
+
+      .admin-container {
+         max-width: 1400px;
+         margin: 2rem auto;
+         padding: 0 2rem 2rem 2rem;
+      }
+
+      .admin-header {
+         background: var(--card-bg);
+         border-radius: 12px;
+         padding: 2rem;
+         margin-bottom: 2rem;
+         box-shadow: var(--shadow-sm);
+         border: 1px solid var(--border-color);
+      }
+
+      .admin-title {
+         font-size: 2.5rem;
+         font-weight: 700;
+         color: var(--text-primary);
+         margin: 0;
+         display: flex;
+         align-items: center;
+         gap: 1rem;
+      }
+
+      .admin-subtitle {
+         color: var(--text-secondary);
+         margin: 0.5rem 0 0 0;
+         font-size: 1.1rem;
+      }
+
+      .admin-stats {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+         gap: 1.5rem;
+         margin-bottom: 2rem;
+      }
+
+      .stat-card {
+         background: var(--card-bg);
+         border-radius: 12px;
+         padding: 1.5rem;
+         box-shadow: var(--shadow-sm);
+         border: 1px solid var(--border-color);
+         transition: all 0.2s ease;
+      }
+
+      .stat-card:hover {
+         transform: translateY(-2px);
+         box-shadow: var(--shadow-md);
+      }
+
+      .stat-value {
+         font-size: 2rem;
+         font-weight: 700;
+         margin: 0;
+      }
+
+      .stat-label {
+         color: var(--text-secondary);
+         font-size: 0.875rem;
+         margin: 0;
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+      }
+
+      .main-content {
+         background: var(--card-bg);
+         border-radius: 12px;
+         box-shadow: var(--shadow-sm);
+         border: 1px solid var(--border-color);
+         overflow: hidden;
+      }
+
+      .content-header {
+         padding: 2rem;
+         border-bottom: 1px solid var(--border-color);
+         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      }
+
+      .search-section {
+         display: flex;
+         gap: 1rem;
+         flex-wrap: wrap;
+         align-items: center;
+         margin-bottom: 1.5rem;
+      }
+
+      .search-input {
+         flex: 1;
+         min-width: 300px;
+         padding: 0.75rem 1rem;
+         border: 2px solid var(--border-color);
+         border-radius: 8px;
+         font-size: 1rem;
+         transition: border-color 0.2s ease;
+      }
+
+      .search-input:focus {
+         outline: none;
+         border-color: var(--primary-color);
+         box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+      }
+
+      .btn-modern {
+         padding: 0.75rem 1.5rem;
+         border: none;
+         border-radius: 8px;
+         font-weight: 600;
+         font-size: 0.875rem;
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+         cursor: pointer;
+         transition: all 0.2s ease;
+         display: inline-flex;
+         align-items: center;
+         gap: 0.5rem;
+      }
+
+      .btn-primary {
+         background: var(--primary-color);
+         color: white;
+      }
+
+      .btn-primary:hover {
+         background: #1d4ed8;
+         transform: translateY(-1px);
+         box-shadow: var(--shadow-md);
+      }
+
+      .btn-success {
+         background: var(--success-color);
+         color: white;
+      }
+
+      .btn-success:hover {
+         background: #047857;
+         transform: translateY(-1px);
+         box-shadow: var(--shadow-md);
+      }
+
+      .btn-warning {
+         background: var(--warning-color);
+         color: white;
+      }
+
+      .btn-warning:hover {
+         background: #b45309;
+      }
+
+      .btn-danger {
+         background: var(--danger-color);
+         color: white;
+      }
+
+      .btn-danger:hover {
+         background: #b91c1c;
+      }
+
+      .btn-secondary {
+         background: var(--secondary-color);
+         color: white;
+      }
+
+      .btn-secondary:hover {
+         background: #475569;
+      }
+
+      .modern-table {
+         width: 100%;
+         border-collapse: separate;
+         border-spacing: 0;
+      }
+
+      .modern-table thead th {
+         background: #f8fafc;
+         padding: 1.25rem 1rem;
+         text-align: left;
+         font-weight: 600;
+         font-size: 0.875rem;
+         color: var(--text-secondary);
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+         border-bottom: 2px solid var(--border-color);
+      }
+
+      .modern-table tbody td {
+         padding: 1.25rem 1rem;
+         border-bottom: 1px solid #f1f5f9;
+         vertical-align: middle;
+      }
+
+      .modern-table tbody tr {
+         transition: background-color 0.15s ease;
+      }
+
+      .modern-table tbody tr:hover {
+         background: #f8fafc;
+      }
+
+      .product-image {
+         width: 48px;
+         height: 48px;
+         border-radius: 8px;
+         object-fit: cover;
+         border: 2px solid var(--border-color);
+      }
+
+      .status-badge {
+         padding: 0.375rem 0.75rem;
+         border-radius: 6px;
+         font-size: 0.75rem;
+         font-weight: 600;
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+      }
+
+      .status-select-container {
+         position: relative;
+         min-width: 120px;
+      }
+
+      .status-dropdown {
+         appearance: none;
+         -webkit-appearance: none;
+         -moz-appearance: none;
+         padding: 0.5rem 1.5rem 0.5rem 0.75rem;
+         border-radius: 6px;
+         font-size: 0.875rem;
+         font-weight: 600;
+         cursor: pointer;
+         border: 2px solid var(--border-color);
+         transition: all 0.2s ease;
+      }
+
+      .status-dropdown:focus {
+         outline: none;
+         border-color: var(--primary-color);
+         box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+      }
+
+      /* Status-specific colors */
+      .status-dropdown option[value="PENDING"] {
+         background: #fef3c7;
+         color: #92400e;
+      }
+
+      .status-dropdown option[value="DELIVERING"] {
+         background: #fef3c7;
+         color: #d97706;
+      }
+
+      .status-dropdown option[value="COMPLETED"] {
+         background: #dcfce7;
+         color: #166534;
+      }
+
+      .status-dropdown option[value="CANCELLED"] {
+         background: #fee2e2;
+         color: #991b1b;
+      }
+
+      .status-dropdown:disabled {
+         background-color: #f3f4f6;
+         cursor: not-allowed;
+         opacity: 0.7;
+
+
+         .action-buttons {
+         display: flex;
+         gap: 0.5rem;
+      }
+
+      .btn-sm {
+         padding: 0.5rem 1rem;
+         font-size: 0.75rem;
+      }
+
+      .empty-state {
+         text-align: center;
+         padding: 4rem 2rem;
+         color: var(--text-secondary);
+      }
+
+      .empty-state i {
+         font-size: 4rem;
+         margin-bottom: 1rem;
+         opacity: 0.3;
+      }
+
+      @media (max-width: 768px) {
+         .admin-container {
+            padding: 1rem;
+         }
+
+         .admin-title {
+            font-size: 2rem;
+         }
+
+         .search-section {
+            flex-direction: column;
+            align-items: stretch;
+         }
+
+         .search-input {
+            min-width: auto;
+         }
+
+         .modal-content {
+            min-width: auto;
+            margin: 1rem;
+         }
+
+         .action-buttons {
+            flex-direction: column;
+         }
+      }
+   </style>
+</head>
+
+<body>
+   <nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+   <div class="admin-container">
+      <div class="admin-header">
+         <div style="margin-bottom: 1rem;">
+<!--            <a th:href="@{/}" class="btn-modern btn-secondary">-->
+<!--               <i class="fas fa-arrow-left"></i>-->
+<!--               Back to Home-->
+<!--            </a>-->
+         </div>
+         <h1 class="admin-title">
+            <i class="fas fa-shopping-cart"></i>
+            Order Management
+         </h1>
+         <p class="admin-subtitle">Monitor and manage customer orders</p>
+      </div>
+
+
+      <div class="admin-stats">
+         <div class="stat-card">
+            <p class="stat-value" style="color: var(--primary-color);" id="totalOrders">0</p>
+            <p class="stat-label">Total Orders</p>
+         </div>
+         <div class="stat-card">
+            <p class="stat-value" style="color: var(--warning-color);" id="pendingOrders">0</p>
+            <p class="stat-label">Pending</p>
+         </div>
+         <div class="stat-card">
+            <p class="stat-value" style="color: var(--success-color);" id="deliveringOrders">0</p>
+            <p class="stat-label">Delivering</p>
+         </div>
+
+         <div class="stat-card">
+            <p class="stat-value" style="color: var(--success-color);" id="completedOrders">0</p>
+            <p class="stat-label">Completed</p>
+         </div>
+         <div class="stat-card">
+            <p class="stat-value" style="color: var(--danger-color);" id="cancelledOrders">0</p>
+            <p class="stat-label">Cancelled</p>
+         </div>
+      </div>
+
+      <div class="main-content">
+         <div class="content-header">
+            <div class="search-section">
+               <input type="text" class="search-input" id="searchInput"
+                  placeholder="Type to search orders by ID, customer name, email, or status..." />
+               <button class="btn-modern btn-primary" onclick="searchOrders()">
+                  <i class="fas fa-search"></i>
+                  Search
+               </button>
+            </div>
+         </div>
+
+         <div id="order-list">
+            <table class="modern-table">
+               <thead>
+                  <tr>
+                     <th>Order ID</th>
+                     <th>Customer</th>
+                     <th>Email</th>
+                     <th>Date</th>
+<!--                     <th>Items</th>-->
+                     <th>Total</th>
+                     <th>Status</th>
+                     <th>Payment Method</th>
+                     <th>Actions</th>
+                  </tr>
+               </thead>
+               <tbody id="orderTableBody">
+                  <!-- Order data will be loaded via JavaScript API calls -->
+                  <tr>
+                     <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <div>
+                           <h5>Loading Orders...</h5>
+                           <p>Please wait while we fetch the latest order data.</p>
+                        </div>
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </div>
+      </div>
+   </div>
+
+   <!-- Scripts -->
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+   <script th:src="@{/js/app.js}"></script>
+
+   <script>
+      // View order details
+      function viewOrderDetails(orderId) {
+         window.location.href = `/manager/order-details?id=${orderId}`;
+      }
+      // Update order statistics
+      function updateOrderStatistics(orders) {
+         if (!orders) return;
+
+         const total = orders.length;
+         const pending = orders.filter(order => order.status === 'PENDING').length;
+         const delivering = orders.filter(order => order.status === 'DELIVERING').length;
+         const completed = orders.filter(order => order.status === 'COMPLETED').length;
+         const cancelled = orders.filter(order => order.status === 'CANCELLED').length;
+
+         document.getElementById('totalOrders').textContent = total;
+         document.getElementById('pendingOrders').textContent = pending;
+         document.getElementById('deliveringOrders').textContent = delivering;
+         document.getElementById('completedOrders').textContent = completed;
+         document.getElementById('cancelledOrders').textContent = cancelled;
+      }
+
+      // Order search functionality
+      function searchOrders() {
+         const searchTerm = document.getElementById('searchInput').value.trim();
+         console.log('Searching orders with term:', searchTerm);
+
+         // Show loading state
+         const searchButton = document.querySelector('button[onclick="searchOrders()"]');
+         const searchInput = document.getElementById('searchInput');
+         const originalText = searchButton.innerHTML;
+
+         searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+         searchButton.disabled = true;
+         searchInput.style.opacity = '0.7';
+
+         // Make API call to search orders
+         const apiUrl = searchTerm ? `/api/manager/orders/search?q=${encodeURIComponent(searchTerm)}` : '/api/manager/orders';
+
+         fetch(apiUrl)
+            .then(response => {
+               if (!response.ok) {
+                  throw new Error('Search failed');
+               }
+               return response.json();
+            })
+            .then(orders => {
+               displayOrders(orders);
+               if (searchTerm) {
+                  showNotification(`Found ${orders.length} orders matching "${searchTerm}"`, 'success');
+               }
+            })
+            .catch(error => {
+               console.error('Search error:', error);
+               showNotification('Failed to search orders. Please try again.', 'error');
+            })
+            .finally(() => {
+               // Restore button and input state
+               searchButton.innerHTML = originalText;
+               searchButton.disabled = false;
+               searchInput.style.opacity = '1';
+            });
+      }
+
+      // Display orders in table
+      function displayOrders(orders) {
+         const tableBody = document.querySelector('#orderTableBody');
+
+         if (!orders || orders.length === 0) {
+            tableBody.innerHTML = `
+               <tr>
+                  <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                     <i class="fas fa-receipt" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                     <div>
+                        <h4>No Orders Found</h4>
+                        <p>Try adjusting your search criteria or check back later for new orders.</p>
+                     </div>
+                  </td>
+               </tr>
+            `;
+            return;
+         }
+
+         // Clear existing rows
+         tableBody.innerHTML = '';
+
+         orders.forEach(order => {
+            const row = document.createElement('tr');
+
+            // Format date
+            const createdDate = new Date(order.createdAt).toLocaleDateString('en-US', {
+               year: 'numeric',
+               month: 'short',
+               day: 'numeric'
+            });
+
+            // Status options với selection đúng - phải đồng bộ với enum backend
+            const statusOptions = [
+               { value: 'PENDING', label: 'Pending' },
+               { value: 'DELIVERING', label: 'Delivering' },
+               { value: 'COMPLETED', label: 'Completed' },
+               { value: 'CANCELLED', label: 'Cancelled' }
+            ];
+
+            const statusOptionsHtml = statusOptions.map(option =>
+               `<option value="${option.value}" ${order.status === option.value ? 'selected' : ''}>${option.label}</option>`
+            ).join('');
+
+            row.innerHTML = `
+               <td>#${order.id}</td>
+               <td>
+                    <strong>${order.fullName || order.username || 'N/A'}</strong>
+               </td>
+               <td>${order.email || 'N/A'}</td>
+               <td>${createdDate}</td>
+               <td>$${order.totalAmount ? parseFloat(order.totalAmount).toFixed(2) : '0.00'}</td>
+               <td>
+                  <div class="status-select-container">
+                       ${order.status === 'COMPLETED' || order.status === 'CANCELLED' ?
+                                   `<select class="status-dropdown form-control" disabled>
+                               <option value="${order.status}" selected>${order.status}</option>
+                            </select>` :
+                                   `<select class="status-dropdown form-control" data-order-id="${order.id}"
+                                    data-original-status="${order.status}"
+                                    onchange="confirmStatusChange(this)">
+                               ${statusOptions.map(option =>
+                                           `<option value="${option.value}"
+                                    ${order.status === option.value ? 'selected' : ''}>
+                                    ${option.label}</option>`
+                                   ).join('')}
+                            </select>`
+                           }
+                  </div>
+
+               </td>
+               <td>${order.paymentMethod || 'N/A'}</td>
+               <td>
+                  <div class="action-buttons">
+                     <button class="btn-modern btn-primary btn-sm" onclick="viewOrderDetails(${order.id})">
+                        <i class="fas fa-eye"></i> View
+                     </button>
+                  </div>
+               </td>
+            `;
+
+            tableBody.appendChild(row);
+         });
+         // Update statistics after displaying orders
+         updateOrderStatistics(orders);
+
+      }
+
+      // Notification system with queue management
+      let notificationQueue = [];
+      let isShowingNotification = false;
+
+      function showNotification(message, type = 'info') {
+         // Add to queue if another notification is showing
+         if (isShowingNotification) {
+            notificationQueue.push({ message, type });
+            return;
+         }
+
+         isShowingNotification = true;
+
+         // Create notification element
+         const notification = document.createElement('div');
+         notification.className = `notification notification-${type}`;
+         notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: var(--shadow-lg);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+         `;
+
+         // Set background color based on type
+         const colors = {
+            success: '#059669',
+            error: '#dc2626',
+            warning: '#d97706',
+            info: '#2563eb'
+         };
+         notification.style.backgroundColor = colors[type] || colors.info;
+
+         notification.textContent = message;
+         document.body.appendChild(notification);
+
+         // Animate in
+         setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+         }, 100);
+
+         // Remove after 4 seconds (longer duration)
+         setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+               document.body.removeChild(notification);
+               isShowingNotification = false;
+               
+               // Show next notification in queue
+               if (notificationQueue.length > 0) {
+                  const next = notificationQueue.shift();
+                  setTimeout(() => {
+                     showNotification(next.message, next.type);
+                  }, 200);
+               }
+            }, 300);
+         }, 4000);
+      }
+
+      // Search on Enter key and auto-search with debounce
+      let searchTimeout;
+      const searchInput = document.getElementById('searchInput');
+
+      searchInput.addEventListener('keypress', function (e) {
+         if (e.key === 'Enter') {
+            clearTimeout(searchTimeout);
+            searchOrders();
+         }
+      });
+
+      // Auto-search with debounce when user types
+      searchInput.addEventListener('input', function (e) {
+         clearTimeout(searchTimeout);
+         searchTimeout = setTimeout(() => {
+            searchOrders();
+         }, 500); // Wait 500ms after user stops typing
+      });
+
+      // Initialize page
+      document.addEventListener('DOMContentLoaded', function () {
+         console.log('Order Management page loaded');
+
+         // Load initial orders from API to ensure consistency
+         loadInitialOrders();
+
+         // Show welcome message after a delay to ensure page is fully loaded
+         setTimeout(() => {
+            showNotification('Order Management system ready!', 'info');
+         }, 800);
+      });
+
+      // Load initial orders
+      function loadInitialOrders() {
+         fetch('/api/manager/orders')
+            .then(response => {
+               if (!response.ok) {
+                  throw new Error('Failed to load orders');
+               }
+               return response.json();
+            })
+            .then(orders => {
+               displayOrders(orders);
+            })
+            .catch(error => {
+               console.error('Error loading orders:', error);
+               showNotification('Failed to load orders. Please refresh the page.', 'error');
+            });
+      }
+
+      async function confirmStatusChange(selectElement) {
+         const orderId = selectElement.getAttribute('data-order-id');
+         const newStatus = selectElement.value;
+
+         // Debug logging
+         console.log('=== Status Change Debug ===');
+         console.log('Order ID:', orderId);
+         console.log('New Status:', newStatus);
+         console.log('Select Element:', selectElement);
+
+         // Get the original status from the data attribute (stored when element was created)
+         let originalStatus = selectElement.getAttribute('data-original-status');
+         console.log('Original Status from attribute:', originalStatus);
+
+         // If no original status stored, get it from the currently selected option
+         if (!originalStatus) {
+            const selectedOption = Array.from(selectElement.options).find(opt => opt.selected && opt.value !== newStatus);
+            originalStatus = selectedOption ? selectedOption.value : selectElement.options[0].value;
+            console.log('Original Status fallback:', originalStatus);
+         }
+
+         // If trying to change to the same status, do nothing
+         if (newStatus === originalStatus) {
+            console.log('Same status selected, no change needed');
+            return;
+         }
+
+         try {
+            console.log('Showing confirmation dialog...');
+            const result = await Swal.fire({
+               title: 'Confirm Status Change',
+               html: `Change order <strong>#${orderId}</strong> from <span style="color: #059669; font-weight: bold;">${originalStatus}</span> to <span style="color: #d97706; font-weight: bold;">${newStatus}</span>?`,
+               icon: 'question',
+               showCancelButton: true,
+               confirmButtonText: 'Update Status',
+               cancelButtonText: 'Cancel',
+               buttonsStyling: false,
+               customClass: {
+                  confirmButton: 'btn-modern btn-success',
+                  cancelButton: 'btn-modern btn-secondary'
+               }
+            });
+
+            if (result.isConfirmed) {
+               console.log('User confirmed status change');
+               
+               // Show loading state
+               selectElement.disabled = true;
+               showNotification('Updating order status...', 'info');
+
+               const apiUrl = `/api/manager/orders/${orderId}/status`;
+               const requestBody = { status: newStatus };
+               if (newStatus === 'CANCELLED') {
+                  const { value: reason } = await Swal.fire({
+                     title: 'Cancel Order',
+                     input: 'text',
+                     inputLabel: 'Reason for cancellation',
+                     inputPlaceholder: 'Enter reason...',
+                     inputValidator: (value) => {
+                        if (!value) return 'You must provide a reason';
+                     },
+                     showCancelButton: true,
+                     confirmButtonText: 'Submit',
+                  });
+
+                  if (!reason) {
+                     selectElement.value = originalStatus;
+                     return;
+                  }
+
+                  requestBody.reason = reason;
+               }
+               
+               console.log('Making API call to:', apiUrl);
+               console.log('Request body:', requestBody);
+
+               const response = await fetch(apiUrl, {
+                  method: 'PATCH',
+                  headers: {
+                     'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(requestBody)
+               });
+
+               console.log('API Response status:', response.status);
+               console.log('API Response ok:', response.ok);
+
+               if (!response.ok) {
+                  const errorText = await response.text();
+                  console.error('API Error response:', errorText);
+                  throw new Error(errorText || 'Failed to update status');
+               }
+
+               const responseData = await response.json();
+               console.log('API Success response:', responseData);
+
+               // Update the original status for future comparisons
+               selectElement.setAttribute('data-original-status', newStatus);
+
+               // Ensure the correct option is selected
+               selectElement.value = newStatus;
+
+               showNotification(`Order #${orderId} status updated to ${newStatus}!`, 'success');
+               console.log('Status update completed successfully');
+            } else {
+               console.log('User cancelled status change');
+               // Revert to original value if cancelled
+               selectElement.value = originalStatus;
+            }
+         } catch (error) {
+            console.error('Status update failed:', error);
+            console.error('Error stack:', error.stack);
+            // Revert to original value on error
+            selectElement.value = originalStatus;
+            showNotification(`Failed to update status: ${error.message}`, 'error');
+         } finally {
+            // Re-enable the select element
+            selectElement.disabled = false;
+            console.log('=== Status Change Debug End ===');
+         }
+      }
+   </script>
+
+   <footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+
+</html>

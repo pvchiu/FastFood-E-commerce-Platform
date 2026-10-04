@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head th:replace="fragments/layout :: head">
+   <title>Login - FastFood App</title>
+   <style>
+      /* Password toggle button styling */
+      .input-group .btn-outline-secondary {
+         border-color: #ced4da;
+         color: #6c757d;
+      }
+      
+      .input-group .btn-outline-secondary:hover {
+         background-color: #f8f9fa;
+         border-color: #adb5bd;
+         color: #495057;
+      }
+      
+      .input-group .btn-outline-secondary:focus {
+         box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
+      }
+      
+      /* Ensure input and button have same height */
+      .input-group .form-control,
+      .input-group .btn {
+         border-radius: 0.375rem;
+      }
+      
+      .input-group .form-control {
+         border-top-right-radius: 0;
+         border-bottom-right-radius: 0;
+      }
+      
+      .input-group .btn {
+         border-top-left-radius: 0;
+         border-bottom-left-radius: 0;
+      }
+   </style>
+</head>
+
+<body class="bg-light">
+   <div class="container">
+      <div class="row justify-content-center mt-5">
+         <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+               <div class="card-body p-4">
+                  <div class="text-center mb-4">
+                     <i class="fas fa-hamburger text-primary" style="font-size: 3rem;"></i>
+                     <h3 class="mt-2">FastFood App</h3>
+                     <p class="text-muted">Log in to your account</p>
+                  </div>
+
+                  <!-- Error Message -->
+                  <div th:if="${param.error}" class="alert alert-danger">
+                     <i class="fas fa-exclamation-circle me-2"></i>
+                     <span th:if="${param.message}" th:text="${param.message[0]}"></span>
+                     <span th:unless="${param.message}">Incorrect username or password!</span>
+                  </div>
+
+                  <!-- Logout Message -->
+                  <div th:if="${param.logout}" class="alert alert-success">
+                     <i class="fas fa-check-circle me-2"></i>
+                     You have successfully logged out!
+                  </div>
+
+                  <!-- Login Form -->
+                  <form th:action="@{/login}" method="post">
+                     <div class="mb-3">
+                        <label for="username" class="form-label">
+                           <i class="fas fa-user me-1"></i>Username
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username"
+                           placeholder="Enter your username" required>
+                     </div>
+
+                     <div class="mb-3">
+                        <label for="password" class="form-label">
+                           <i class="fas fa-lock me-1"></i>Password
+                        </label>
+                        <div class="input-group">
+                           <input type="password" class="form-control" id="password" name="password"
+                              placeholder="Enter your password" required>
+                           <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                              <i class="fas fa-eye" id="passwordToggleIcon"></i>
+                           </button>
+                        </div>
+                     </div>
+
+                     <!-- <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember-me" name="remember-me">
+                        <label class="form-check-label" for="remember-me">
+                           Remember me
+                        </label>
+                     </div> -->
+
+                     <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login
+                     </button>
+                  </form>
+
+                  <!-- Forgot Password Link -->
+                  <div class="text-center mb-3">
+                     <a th:href="@{/forgot-password}" class="text-decoration-none text-primary">
+                        <i class="fas fa-key me-1"></i>Forgot password?
+                     </a>
+                  </div>
+
+                  <!-- Register Link -->
+                  <div class="text-center mb-3">
+                     <span class="text-muted">Don't have an account? </span>
+                     <a th:href="@{/register}" class="text-decoration-none text-primary">
+                        <i class="fas fa-user-plus me-1"></i>Register now
+                     </a>
+                  </div>
+
+                  <div class="text-center mt-3">
+                     <a th:href="@{/}" class="text-decoration-none">
+                        <i class="fas fa-arrow-left me-1"></i>Back to homepage
+                     </a>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Scripts -->
+   <div th:replace="fragments/layout :: scripts"></div>
+   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+   
+   <script th:if="${param.resetSuccess}">
+      Swal.fire({
+         icon: 'success',
+         title: 'Password Reset Successful',
+         text: 'You can now login with your new password.',
+         confirmButtonText: 'OK'
+      });
+   </script>
+
+   <script th:if="${param.success}">
+      Swal.fire({
+         icon: 'success',
+         title: 'Registration Successful',
+         text: 'You can now login with your new account.',
+         confirmButtonText: 'Login'
+      });
+   </script>
+
+   <!-- Password Toggle Script -->
+   <script>
+      document.addEventListener('DOMContentLoaded', function() {
+         const togglePassword = document.getElementById('togglePassword');
+         const passwordInput = document.getElementById('password');
+         const passwordToggleIcon = document.getElementById('passwordToggleIcon');
+
+         togglePassword.addEventListener('click', function() {
+            // Toggle password visibility
+            if (passwordInput.type === 'password') {
+               passwordInput.type = 'text';
+               passwordToggleIcon.className = 'fas fa-eye-slash';
+               togglePassword.setAttribute('title', 'Hide password');
+            } else {
+               passwordInput.type = 'password';
+               passwordToggleIcon.className = 'fas fa-eye';
+               togglePassword.setAttribute('title', 'Show password');
+            }
+         });
+
+         // Set initial tooltip
+         togglePassword.setAttribute('title', 'Show password');
+      });
+   </script>
+</body>
+
+</html>

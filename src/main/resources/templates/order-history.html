@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="fragments/layout :: head">
+    <meta charset="UTF-8" />
+    <title>Order History</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        background-color: #f8f9fa;
+        background-color: #ffe17b;
+
+        font-family: Arial, sans-serif;
+      }
+
+      .order-card {
+        border-left: 5px solid #0d6efd;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+
+      .order-info p {
+        margin-bottom: 0.4rem;
+      }
+
+      .modal-content {
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        border: none;
+      }
+
+      .modal-header {
+        border-bottom: none;
+      }
+
+      .modal-footer {
+        border-top: none;
+      }
+
+      .modal-content.rating-modal {
+        background-color: #fff;
+        border-radius: 20px;
+        padding: 30px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .modal-title {
+        font-weight: bold;
+        font-size: 1.25rem;
+        width: 100%;
+        text-align: center;
+      }
+
+      body {
+        background: #f5f5f5;
+        font-family: Arial, sans-serif;
+        padding: 50px;
+      }
+
+      .modal-content {
+        border-radius: 16px;
+        border: none;
+      }
+
+      .rating-box {
+        background-color: #fff;
+        border-radius: 20px;
+        padding: 30px;
+        max-width: 100%;
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .rating-box h5 {
+        font-weight: 600;
+        font-size: 18px;
+        margin-bottom: 25px;
+        color: #333;
+      }
+
+      .star-rating {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+        position: relative;
+      }
+
+      .star-rating input {
+        display: none;
+      }
+
+      .star-rating label {
+        font-size: 2.5rem;
+        color: #ccc;
+        cursor: pointer;
+        transition: color 0.3s, transform 0.2s;
+        padding: 8px;
+        border-radius: 50%;
+      }
+
+      .star-rating input:checked ~ label,
+      .star-rating label:hover,
+      .star-rating label:hover ~ label {
+        color: #000;
+        background-color: #e0e0e0;
+        transform: scale(1.1);
+      }
+
+      .rating-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #666;
+        padding: 0 20px;
+      }
+
+      .btn-submit {
+        background-color: #000;
+        color: #fff;
+        padding: 10px 25px;
+        border: none;
+        border-radius: 25px;
+        font-weight: bold;
+        margin-top: 20px;
+        transition: background-color 0.3s;
+      }
+
+      .btn-submit:hover {
+        background-color: #333;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+
+    <div class="container mt-5">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Your Order History</h2>
+        <a href="/" class="btn btn-outline-secondary">Back to Home</a>
+      </div>
+
+      <div class="container mt-4">
+        <div class="row justify-content-center text-center">
+          <!-- Total Orders -->
+          <div class="col-md-4 col-sm-6 mb-4">
+            <div class="stat-box shadow-sm border border-primary-subtle">
+              <div class="stat-icon text-primary mb-2">
+                <i class="fas fa-shopping-basket fa-2x"></i>
+              </div>
+              <div
+                class="stat-value text-primary fw-bold fs-3"
+                th:text="${orders.size()}"
+              >
+                0
+              </div>
+              <div class="stat-label text-muted">Total Orders</div>
+            </div>
+          </div>
+
+          <!-- Total Spent -->
+          <div class="col-md-4 col-sm-6 mb-4">
+            <div class="stat-box shadow-sm border border-success-subtle">
+              <div class="stat-icon text-success mb-2">
+                <i class="fas fa-dollar-sign fa-2x"></i>
+              </div>
+              <div class="stat-value text-success fw-bold fs-3">
+                $<span th:text="${totalSpent}">0.00</span>
+              </div>
+              <div class="stat-label text-muted">Total Spent</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${orders.isEmpty()}">
+        <div class="alert alert-info">You haven't placed any orders yet.</div>
+      </div>
+
+      <div th:if="${orders.isEmpty()}">
+        <div class="alert alert-info">You haven't placed any orders yet.</div>
+      </div>
+
+      <!-- Bắt đầu lặp từng đơn hàng -->
+      <div th:each="order : ${orders}" class="card order-card mb-4">
+        <!-- Modal đánh giá sản phẩm -->
+        <div th:each="item : ${order.orderItems}">
+          <div
+            class="modal fade"
+            th:id="'reviewModal__' + ${item.id}"
+            tabindex="-1"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog">
+              <form
+                th:action="@{/orders/reviews/submit}"
+                method="post"
+                class="modal-content"
+                th:attr="data-reviewed=${#lists.contains(reviewedProductIds, item.product.id)}"
+                style="
+                  background-color: #fff;
+                  border-radius: 20px;
+                  padding: 30px;
+                  border: none;
+                  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                  text-align: center;
+                "
+              >
+                <div class="modal-header border-0">
+                  <h5
+                    class="modal-title w-100 text-center"
+                    style="font-weight: bold; font-size: 1.25rem"
+                  >
+                    How do you rate
+                    <span th:text="${item.product.name}">this product?</span>
+                  </h5>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+
+                <div class="modal-body">
+                  <input type="hidden" name="orderId" th:value="${order.id}" />
+                  <input
+                    type="hidden"
+                    name="productId"
+                    th:value="${item.product.id}"
+                  />
+
+                  <!-- Stars -->
+                  <div
+                    class="star-rating"
+                    style="
+                      display: flex;
+                      justify-content: center;
+                      gap: 16px;
+                      margin: 20px 0;
+                    "
+                  >
+                    <input
+                      type="radio"
+                      name="rating"
+                      value="1"
+                      th:id="'rate1__' + ${item.id}"
+                      style="display: none"
+                    />
+                    <label th:for="'rate1__' + ${item.id}">★</label>
+
+                    <input
+                      type="radio"
+                      name="rating"
+                      value="2"
+                      th:id="'rate2__' + ${item.id}"
+                      style="display: none"
+                    />
+                    <label th:for="'rate2__' + ${item.id}">★</label>
+
+                    <input
+                      type="radio"
+                      name="rating"
+                      value="3"
+                      th:id="'rate3__' + ${item.id}"
+                      style="display: none"
+                    />
+                    <label th:for="'rate3__' + ${item.id}">★</label>
+
+                    <input
+                      type="radio"
+                      name="rating"
+                      value="4"
+                      th:id="'rate4__' + ${item.id}"
+                      style="display: none"
+                    />
+                    <label th:for="'rate4__' + ${item.id}">★</label>
+
+                    <input
+                      type="radio"
+                      name="rating"
+                      value="5"
+                      th:id="'rate5__' + ${item.id}"
+                      style="display: none"
+                    />
+                    <label th:for="'rate5__' + ${item.id}">★</label>
+                  </div>
+
+                  <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                      document.querySelectorAll(".modal").forEach((modal) => {
+                        const radios = modal.querySelectorAll(
+                          'input[type="radio"][name="rating"]'
+                        );
+                        const labels =
+                          modal.querySelectorAll(".star-rating label");
+
+                        radios.forEach((radio) => {
+                          radio.addEventListener("change", function () {
+                            const rating = parseInt(radio.value);
+                            labels.forEach((label, index) => {
+                              if (index < rating) {
+                                label.style.color = "#ffc107"; // vàng
+                                label.style.backgroundColor =
+                                  "rgba(255,255,255,0.6)";
+                                label.style.transform = "scale(1.1)";
+                              } else {
+                                label.style.color = "#ccc";
+                                label.style.backgroundColor = "transparent";
+                                label.style.transform = "scale(1)";
+                              }
+                            });
+                          });
+                        });
+                      });
+                    });
+                  </script>
+
+                  <!-- Nhãn Bad/Excellent -->
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 0 40px;
+                      font-size: 0.9rem;
+                      color: #444;
+                      margin-bottom: 15px;
+                    "
+                  >
+                    <span>Bad</span>
+                    <span>Excellent</span>
+                  </div>
+
+                  <textarea
+                    class="form-control mt-3"
+                    name="comment"
+                    rows="3"
+                    placeholder="Leave your comment here..."
+                    style="
+                      border-radius: 12px;
+                      font-size: 0.95rem;
+                      padding: 10px 15px;
+                    "
+                  ></textarea>
+                </div>
+
+                <div class="modal-footer border-0 justify-content-center">
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-cancel"
+                    data-bs-dismiss="modal"
+                    style="border-radius: 25px; padding: 8px 20px"
+                  >
+                    Cancel
+                  </button>
+                  <th:block
+                    th:if="${#lists.contains(reviewedProductIds, item.product.id)}"
+                  >
+                    <div class="text-danger mb-2" style="font-weight: bold">
+                      You have already reviewed this product!
+                    </div>
+                    <button
+                      type="submit"
+                      class="btn-submit"
+                      disabled
+                      style="background-color: #ccc; cursor: not-allowed"
+                    >
+                      Submit Review
+                    </button>
+                  </th:block>
+
+                  <th:block
+                    th:unless="${#lists.contains(reviewedProductIds, item.product.id)}"
+                  >
+                    <button
+                      type="submit"
+                      class="btn-submit"
+                      style="
+                        background-color: #000;
+                        color: #fff;
+                        padding: 10px 25px;
+                        border: none;
+                        border-radius: 25px;
+                        font-weight: bold;
+                        margin-left: 10px;
+                      "
+                    >
+                      Submit Review
+                    </button>
+                  </th:block>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phần hiển thị thông tin đơn hàng -->
+        <div class="card-body">
+          <h5 class="card-title">
+            Order #<span th:text="${order.orderNumber}"></span>
+          </h5>
+
+          <div class="order-info">
+            <p>Status: <strong th:text="${order.status}">Processing</strong></p>
+            <p>
+              Payment Method:
+              <strong th:text="${order.paymentMethod}">COD</strong>
+            </p>
+            <p>
+              Total Amount:
+              <strong>$<span th:text="${order.totalAmount}"></span></strong>
+            </p>
+            <p>
+              Created At:
+              <strong
+                th:text="${#temporals.format(order.createdAt, 'dd-MM-yyyy HH:mm')}"
+              ></strong>
+            </p>
+          </div>
+
+          <div class="mt-3">
+            <h6>Products in this order:</h6>
+            <ul class="list-group">
+              <li
+                th:each="item : ${order.orderItems}"
+                class="list-group-item d-flex justify-content-between align-items-center"
+              >
+                <div>
+                  <strong th:text="${item.product.name}">Product Name</strong>
+                  <span class="text-muted ms-2"
+                    >x <span th:text="${item.quantity}">1</span></span
+                  >
+                </div>
+                <!-- Nút mở modal đánh giá -->
+                <div th:if="${order.status.name() == 'COMPLETED'}">
+                  <button
+                    class="btn btn-outline-primary btn-sm"
+                    data-bs-toggle="modal"
+                    th:attr="data-bs-target='#reviewModal__' + ${item.id}"
+                  >
+                    Review
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer th:replace="fragments/layout :: footer"></footer>
+    <!-- Scripts -->
+
+    <!-- Bootstrap JS (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const reviewForms = document.querySelectorAll("form.modal-content");
+
+        reviewForms.forEach((form) => {
+          form.addEventListener("submit", function (e) {
+            const reviewed = form.getAttribute("data-reviewed") === "true";
+            if (reviewed) {
+              e.preventDefault(); // prevent form submission
+              Swal.fire({
+                icon: "info",
+                title: "You have already reviewed this product!",
+                text: "Each product can only be reviewed once.",
+                confirmButtonColor: "#000",
+              });
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

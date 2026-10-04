@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <!-- Thêm meta tag để truyền role từ server -->
+   <meta name="user-role" th:content="${#authentication.authorities[0].authority}" sec:authorize="isAuthenticated()" />
+   <meta name="user-role" content="ROLE_ANONYMOUS" sec:authorize="isAnonymous()" />
+
+   <link rel="icon" href="/images/b.png" type="image/png" />
+   <title>Order Details - Admin</title>
+
+   <!-- Bootstrap CSS -->
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+   <!-- Font Awesome -->
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+   <!-- Custom CSS -->
+   <link th:href="@{/css/style.css}" rel="stylesheet" />
+
+   <style>
+      :root {
+         --primary-color: #2563eb;
+         --secondary-color: #64748b;
+         --success-color: #059669;
+         --warning-color: #d97706;
+         --danger-color: #dc2626;
+         --background-color: #f8fafc;
+         --card-bg: #ffffff;
+         --text-primary: #1e293b;
+         --text-secondary: #64748b;
+         --border-color: #e2e8f0;
+         --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+         --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+         --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      }
+
+      body {
+         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+         background: var(--background-color);
+         color: var(--text-primary);
+         line-height: 1.6;
+      }
+
+      .admin-container {
+         max-width: 1200px;
+         margin: 2rem auto;
+         padding: 0 1rem;
+      }
+
+      .order-header {
+         background: var(--card-bg);
+         border-radius: 12px;
+         padding: 2rem;
+         box-shadow: var(--shadow-md);
+         margin-bottom: 2rem;
+      }
+
+      .order-status {
+         display: inline-block;
+         padding: 0.5rem 1rem;
+         border-radius: 20px;
+         font-weight: 600;
+         font-size: 0.875rem;
+         text-transform: uppercase;
+      }
+
+      .status-pending {
+         background: #fef3c7;
+         color: #92400e;
+      }
+
+      .status-confirmed {
+         background: #dbeafe;
+         color: #1e40af;
+      }
+
+      .status-preparing {
+         background: #fde68a;
+         color: #b45309;
+      }
+
+      .status-ready {
+         background: #d1fae5;
+         color: #065f46;
+      }
+
+      .status-delivered {
+         background: #dcfce7;
+         color: #166534;
+      }
+
+      .status-cancelled {
+         background: #fee2e2;
+         color: #991b1b;
+      }
+
+      .info-card {
+         background: var(--card-bg);
+         border-radius: 12px;
+         padding: 1.5rem;
+         box-shadow: var(--shadow-sm);
+         margin-bottom: 1.5rem;
+      }
+
+      .info-card h3 {
+         margin-bottom: 1rem;
+         color: var(--text-primary);
+         font-size: 1.125rem;
+         font-weight: 600;
+      }
+
+      .info-item {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         padding: 0.75rem 0;
+         border-bottom: 1px solid var(--border-color);
+      }
+
+      .info-item:last-child {
+         border-bottom: none;
+      }
+
+      .info-label {
+         font-weight: 500;
+         color: var(--text-secondary);
+      }
+
+      .info-value {
+         font-weight: 600;
+         color: var(--text-primary);
+      }
+
+      .order-items-table {
+         background: var(--card-bg);
+         border-radius: 12px;
+         overflow: hidden;
+         box-shadow: var(--shadow-sm);
+         margin-bottom: 2rem;
+      }
+
+      .table {
+         margin-bottom: 0;
+      }
+
+      .table th {
+         background: #f8fafc;
+         font-weight: 600;
+         color: var(--text-primary);
+         border-bottom: 2px solid var(--border-color);
+         padding: 1rem;
+      }
+
+      .table td {
+         padding: 1rem;
+         vertical-align: middle;
+         border-bottom: 1px solid var(--border-color);
+      }
+
+      .product-info {
+         display: flex;
+         align-items: center;
+         gap: 1rem;
+      }
+
+      .product-image {
+         width: 50px;
+         height: 50px;
+         border-radius: 8px;
+         object-fit: cover;
+      }
+
+      .product-name {
+         font-weight: 600;
+         color: var(--text-primary);
+         margin-bottom: 0.25rem;
+      }
+
+      .product-description {
+         font-size: 0.875rem;
+         color: var(--text-secondary);
+      }
+
+      .quantity-badge {
+         background: var(--primary-color);
+         color: white;
+         padding: 0.25rem 0.75rem;
+         border-radius: 20px;
+         font-weight: 600;
+         font-size: 0.875rem;
+      }
+
+      .price {
+         font-weight: 600;
+         color: var(--text-primary);
+         font-size: 1.1rem;
+      }
+
+      .total-section {
+         background: var(--card-bg);
+         border-radius: 12px;
+         padding: 1.5rem;
+         box-shadow: var(--shadow-sm);
+      }
+
+      .total-row {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         padding: 0.75rem 0;
+         border-bottom: 1px solid var(--border-color);
+      }
+
+      .total-row:last-child {
+         border-bottom: none;
+         font-size: 1.25rem;
+         font-weight: 700;
+         color: var(--primary-color);
+      }
+
+      .back-btn {
+         background: var(--secondary-color);
+         color: white;
+         border: none;
+         padding: 0.75rem 1.5rem;
+         border-radius: 8px;
+         font-weight: 600;
+         text-decoration: none;
+         display: inline-flex;
+         align-items: center;
+         gap: 0.5rem;
+         transition: all 0.2s ease;
+      }
+
+      .back-btn:hover {
+         background: #475569;
+         color: white;
+         text-decoration: none;
+         transform: translateY(-1px);
+      }
+
+      .action-buttons {
+         display: flex;
+         gap: 1rem;
+         margin-top: 2rem;
+      }
+
+      .btn-modern {
+         padding: 0.75rem 1.5rem;
+         border-radius: 8px;
+         font-weight: 600;
+         border: none;
+         cursor: pointer;
+         transition: all 0.2s ease;
+         display: inline-flex;
+         align-items: center;
+         gap: 0.5rem;
+         text-decoration: none;
+      }
+
+      .btn-primary {
+         background: var(--primary-color);
+         color: white;
+      }
+
+      .btn-primary:hover {
+         background: #1d4ed8;
+         transform: translateY(-1px);
+      }
+
+      .btn-success {
+         background: var(--success-color);
+         color: white;
+      }
+
+      .btn-success:hover {
+         background: #047857;
+         transform: translateY(-1px);
+      }
+   </style>
+</head>
+
+<body>
+   <nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+   <div class="admin-container">
+      <!-- Order Header -->
+      <div class="order-header">
+         <div class="d-flex justify-content-between align-items-start">
+            <div>
+               <h1 class="mb-2">Order Details</h1>
+               <div class="d-flex align-items-center gap-3">
+                  <h2 class="mb-0" id="orderNumber">Order #ORDER001</h2>
+                  <span class="order-status" id="orderStatus">pending</span>
+               </div>
+            </div>
+            <a href="/manager/order-management" class="back-btn">
+               <i class="fas fa-arrow-left"></i>
+               Back to Order Manager
+            </a>
+         </div>
+      </div>
+
+      <div class="row">
+         <!-- Order Information -->
+         <div class="col-md-4">
+            <div class="info-card">
+               <h3><i class="fas fa-info-circle"></i> Order Information</h3>
+               <div class="info-item">
+                  <span class="info-label">Order ID:</span>
+                  <span class="info-value" id="orderId">#001</span>
+               </div>
+               <div class="info-item">
+                  <span class="info-label">Order Date:</span>
+                  <span class="info-value" id="orderDate">2025-01-29</span>
+               </div>
+               <div class="info-item">
+                  <span class="info-label">Status:</span>
+                  <span class="info-value" id="orderStatusText">Pending</span>
+               </div>
+               <div class="info-item">
+                  <span class="info-label">Payment Method:</span>
+                  <span class="info-value" id="paymentMethod">Cash</span>
+               </div>
+            </div>
+
+            <div class="info-card">
+               <h3><i class="fas fa-user"></i> Customer Information</h3>
+               <div class="info-item">
+                  <span class="info-label">Name:</span>
+                  <span class="info-value" id="customerName">Loading...</span>
+               </div>
+               <div class="info-item">
+                  <span class="info-label">Email:</span>
+                  <span class="info-value" id="customerEmail">Loading...</span>
+               </div>
+               <div class="info-item">
+                  <span class="info-label">Phone:</span>
+                  <span class="info-value" id="customerPhone">Loading...</span>
+               </div>
+            </div>
+
+            <div class="info-card">
+               <h3><i class="fas fa-map-marker-alt"></i> Delivery Information</h3>
+               <div class="info-item">
+                  <span class="info-label">Address:</span>
+                  <span class="info-value" id="deliveryAddress">Loading...</span>
+               </div>
+               <div class="info-item">
+                  <span class="info-label">Notes:</span>
+                  <span class="info-value" id="deliveryNotes">Loading...</span>
+               </div>
+            </div>
+         </div>
+
+         <!-- Order Items -->
+         <div class="col-md-8">
+            <div class="order-items-table">
+               <h3 class="p-3 mb-0 border-bottom"><i class="fas fa-shopping-cart"></i> Order Items</h3>
+               <table class="table">
+                  <thead>
+                     <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Subtotal</th>
+                     </tr>
+                  </thead>
+                  <tbody id="orderItemsBody">
+                     <!-- Order items will be loaded here -->
+                  </tbody>
+               </table>
+            </div>
+
+            <!-- Total Section -->
+            <div class="total-section">
+               <h3 class="mb-3"><i class="fas fa-calculator"></i> Order Total</h3>
+               <div class="total-row">
+                  <span>Total Amount:</span>
+                  <span class="price" id="totalAmount">$0.00</span>
+               </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+               <button class="btn-modern btn-primary" onclick="printOrder()">
+                  <i class="fas fa-print"></i>
+                  Print Order
+               </button>
+               <button class="btn-modern btn-success" onclick="updateOrderStatus()">
+                  <i class="fas fa-edit"></i>
+                  Update Status
+               </button>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Scripts -->
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+   <script th:src="@{/js/app.js}"></script>
+
+   <script>
+      // Get order ID from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('id');
+
+      if (!orderId) {
+         alert('Order ID not found!');
+         window.location.href = '/admin/orders';
+      }
+
+      // Load order details
+      async function loadOrderDetails() {
+         try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+            const headers = {
+               'Content-Type': 'application/json'
+            };
+
+            if (csrfToken && csrfHeader) {
+               headers[csrfHeader] = csrfToken;
+            }
+
+            const response = await fetch(`/api/manager/orders/${orderId}`, {
+               method: 'GET',
+               headers: headers
+            });
+
+            if (!response.ok) {
+               throw new Error('Failed to load order details');
+            }
+
+            const order = await response.json();
+            displayOrderDetails(order);
+
+         } catch (error) {
+            console.error('Error loading order details:', error);
+            alert('Failed to load order details: ' + error.message);
+         }
+      }
+
+      function displayOrderDetails(order) {
+         // Update order header
+         document.getElementById('orderNumber').textContent = `Order #${order.orderNumber || order.id}`;
+         document.getElementById('orderStatus').textContent = order.status.toLowerCase();
+         document.getElementById('orderStatus').className = `order-status status-${order.status.toLowerCase()}`;
+
+         // Update order information
+         document.getElementById('orderId').textContent = `#${order.id}`;
+         document.getElementById('orderDate').textContent = formatDate(order.createdAt);
+         document.getElementById('orderStatusText').textContent = order.status;
+         document.getElementById('paymentMethod').textContent = order.paymentMethod || 'N/A';
+
+         // Update customer information
+         if (order.user) {
+            document.getElementById('customerName').textContent = order.user.fullName || order.user.username || 'N/A';
+            document.getElementById('customerEmail').textContent = order.user.email || 'N/A';
+            document.getElementById('customerPhone').textContent = order.user.phoneNumber || 'N/A';
+         }
+
+         // Update delivery information
+         document.getElementById('deliveryAddress').textContent = order.deliveryAddress || 'N/A';
+         document.getElementById('deliveryNotes').textContent = order.notes || 'No special notes';
+
+         // Update order items
+         displayOrderItems(order.orderItems || []);
+
+         // Update total
+         document.getElementById('totalAmount').textContent = `$${order.totalAmount.toFixed(2)}`;
+      }
+
+      function displayOrderItems(orderItems) {
+         const tbody = document.getElementById('orderItemsBody');
+         tbody.innerHTML = '';
+
+         if (orderItems.length === 0) {
+            tbody.innerHTML = `
+               <tr>
+                  <td colspan="4" class="text-center text-muted">No items in this order</td>
+               </tr>
+            `;
+            return;
+         }
+
+         orderItems.forEach(item => {
+            const row = document.createElement('tr');
+
+            // Handle image URL properly with debug
+            let imageUrl = '/images/default-avatar.jpg'; // Default image
+            if (item.product?.imageUrl) {
+               console.log('Original imageUrl:', item.product.imageUrl); // Debug log
+
+               // If imageUrl starts with http or /, use as is
+               if (item.product.imageUrl.startsWith('http') || item.product.imageUrl.startsWith('/')) {
+                  imageUrl = item.product.imageUrl;
+               }
+               // If imageUrl starts with 'images/', add leading slash only
+               else if (item.product.imageUrl.startsWith('images/')) {
+                  imageUrl = `/${item.product.imageUrl}`;
+               }
+               else {
+                  // Otherwise, add /images/ prefix
+                  imageUrl = `/images/${item.product.imageUrl}`;
+               }
+
+               console.log('Final imageUrl:', imageUrl); // Debug log
+            }
+
+            row.innerHTML = `
+               <td>
+                  <div class="product-info">
+                     <img src="${imageUrl}" 
+                          alt="${item.product?.name || 'Product'}" 
+                          class="product-image"
+                          onerror="this.src='/images/default-avatar.jpg'">
+                     <div>
+                        <div class="product-name">${item.product?.name || 'Unknown Product'}</div>
+                        <div class="product-description">${item.specialInstructions || 'No special instructions'}</div>
+                     </div>
+                  </div>
+               </td>
+               <td>
+                  <span class="quantity-badge">${item.quantity}</span>
+               </td>
+               <td class="price">$${item.unitPrice.toFixed(2)}</td>
+               <td class="price">$${item.subtotal.toFixed(2)}</td>
+            `;
+            tbody.appendChild(row);
+         });
+      }
+
+      function formatDate(dateString) {
+         const date = new Date(dateString);
+         return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+         });
+      }
+
+      function printOrder() {
+         window.print();
+      }
+
+      function updateOrderStatus() {
+         // Redirect to order management with this order highlighted
+         window.location.href = `/manager/order-management?highlight=${orderId}`;
+      }
+
+      // Load order details when page loads
+      document.addEventListener('DOMContentLoaded', function () {
+         loadOrderDetails();
+      });
+   </script>
+
+   <footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+
+</html>

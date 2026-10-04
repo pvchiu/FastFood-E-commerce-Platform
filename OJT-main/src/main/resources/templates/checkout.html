@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="fragments/layout :: head">
+    <meta charset="UTF-8" />
+    <title>Checkout</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .checkout-container {
+        max-width: 900px;
+        margin: auto;
+        padding: 30px;
+        background-color: #f9f9f9;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      .product-img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      .total-line {
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+      .form-label {
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+
+    <div class="container mt-5 checkout-container">
+      <h2 class="mb-4 text-center">Checkout</h2>
+
+      <!-- Error Alert - Cập nhật để hiển thị nhiều loại lỗi hơn -->
+      <div th:if="${param.error != null || errorMessage != null}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span th:if="${param.error != null && param.error[0] == 'payment_failed'}">
+          <strong>Payment failed!</strong> Please try again or choose a different payment method.
+        </span>
+        <span th:if="${param.error != null && param.error[0] == 'session_expired'}">
+          <strong>Session expired!</strong> Please try again.
+        </span>
+        <span th:if="${param.error != null && param.error[0] == 'order_not_found'}">
+          <strong>Order not found!</strong> Please try again.
+        </span>
+        <span th:if="${param.error != null && param.error[0] == 'invalid_signature'}">
+          <strong>Payment verification failed!</strong> Please try again.
+        </span>
+        <span th:if="${param.error != null && param.error[0] == 'processing_error'}">
+          <strong>Processing error!</strong> Please try again.
+        </span>
+        <span th:if="${errorMessage != null}" th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+
+      <form method="post" th:action="@{/checkout}">
+        <!-- Cart Items -->
+        <div class="mb-4">
+          <h5>Items in your cart</h5>
+          <table class="table table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th>Image</th>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="item : ${cartItems}">
+                <td>
+                  <img
+                    th:src="@{'/' + ${item.product.imageUrl}}"
+                    style="width: 80px; height: 80px; object-fit: contain; display: block; margin: auto; border: 1px solid #ccc; border-radius: 4px; background-color: #f9f9f9;"
+                    alt="Product Image"
+                  />
+                </td>
+                <td th:text="${item.product.name}">Product Name</td>
+                <td th:text="${item.quantity}">1</td>
+                <td th:text="${item.product.price} + ' $'"></td>
+                <td
+                  th:text="${item.product.price.multiply(T(java.math.BigDecimal).valueOf(item.quantity.doubleValue()))}"
+                ></td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="text-end total-line">
+            Total: <span th:text="${totalAmount} + ' $'">0</span>
+          </p>
+        </div>
+
+        <!-- Delivery Address -->
+        <div class="mb-3">
+          <label class="form-label">Delivery Address</label>
+          <textarea
+            name="deliveryAddress"
+            class="form-control"
+            rows="2"
+            placeholder="Enter your delivery address"
+            required
+          ></textarea>
+        </div>
+
+        <!-- Notes -->
+        <div class="mb-3">
+          <label class="form-label">Notes</label>
+          <textarea
+            name="notes"
+            class="form-control"
+            rows="2"
+            placeholder="Any special notes (optional)"
+          ></textarea>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="mb-3">
+          <label class="form-label">Payment Method</label>
+          <select class="form-select" name="paymentMethod" required>
+            <option value="" disabled selected>
+              -- Select Payment Method --
+            </option>
+            <th:block th:each="pm : ${paymentMethods}">
+              <option th:value="${pm}" th:text="${pm}"></option>
+            </th:block>
+          </select>
+        </div>
+        
+        <!-- Submit -->
+        <div class="text-end">
+          <button type="submit" class="btn btn-success" id="submitBtn">Confirm & Pay</button>
+        </div>
+      </form>
+    </div>
+    
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const paymentSelect = document.querySelector('select[name="paymentMethod"]');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        paymentSelect.addEventListener('change', function() {
+          const selectedValue = this.value;
+          
+          if (selectedValue === 'CASH') {
+            submitBtn.textContent = 'Confirm Order';
+          } else if (selectedValue === 'ONLINE_BANKING') {
+            submitBtn.textContent = 'Pay with VNPay';
+          } else {
+            submitBtn.textContent = 'Confirm & Pay';
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

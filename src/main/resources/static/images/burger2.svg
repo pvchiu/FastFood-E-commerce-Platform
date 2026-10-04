@@ -1,0 +1,6 @@
+<!-- Placeholder for burger2.jpg -->
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#FFD700"/>
+  <circle cx="150" cy="100" r="80" fill="#FFA500"/>
+  <text x="150" y="105" font-family="Arial" font-size="16" fill="white" text-anchor="middle">McChicken</text>
+</svg>

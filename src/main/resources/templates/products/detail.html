@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title th:text="${product?.name + ' | FastFood App' ?: 'Product Detail | FastFood App'}">Product Detail |
+      FastFood App</title>
+   <link rel="icon" th:href="@{/images/b.png}" type="image/png" />
+
+   <!-- Bootstrap CSS -->
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+   <!-- Font Awesome -->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+   <!-- Custom CSS -->
+   <link rel="stylesheet" th:href="@{/css/style.css}">
+
+   <style>
+      .product-image-container {
+         position: relative;
+         overflow: hidden;
+         border-radius: 15px;
+      }
+
+      .main-product-image {
+         width: 100%;
+         height: 400px;
+         object-fit: cover;
+         transition: transform 0.3s ease;
+         cursor: zoom-in;
+      }
+
+      .main-product-image:hover {
+         transform: scale(1.05);
+      }
+
+      .thumbnail-container {
+         display: flex;
+         gap: 10px;
+         margin-top: 15px;
+         overflow-x: auto;
+         padding: 5px 0;
+      }
+
+      .thumbnail-image {
+         width: 80px;
+         height: 80px;
+         object-fit: cover;
+         border-radius: 8px;
+         cursor: pointer;
+         transition: all 0.3s ease;
+         border: 2px solid transparent;
+      }
+
+      .thumbnail-image:hover {
+         border-color: #ff6b35;
+         transform: scale(1.1);
+      }
+
+      .product-info {
+         background: white;
+         border-radius: 15px;
+         padding: 25px;
+         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .product-title {
+         font-size: 2rem;
+         font-weight: bold;
+         color: #2c3e50;
+         margin-bottom: 10px;
+      }
+
+      .product-rating {
+         display: flex;
+         align-items: center;
+         gap: 10px;
+         margin-bottom: 15px;
+      }
+
+      .rating-stars {
+         color: #ffc107;
+      }
+
+      .price-section {
+         background: linear-gradient(135deg, white, white);
+         padding: 20px;
+         border-radius: 12px;
+         color: white;
+         margin-bottom: 20px;
+      }
+
+      .current-price {
+         font-size: 2.5rem;
+         font-weight: bold;
+         margin-bottom: 5px;
+      }
+
+      .original-price {
+         font-size: 1.2rem;
+         text-decoration: line-through;
+         opacity: 0.8;
+      }
+
+      .customization-section {
+         background: #f8f9fa;
+         padding: 20px;
+         border-radius: 12px;
+         margin-bottom: 20px;
+      }
+
+      .size-options {
+         display: flex;
+         gap: 10px;
+         margin-bottom: 15px;
+      }
+
+      .size-option {
+         position: relative;
+      }
+
+      .size-option input[type="radio"] {
+         display: none;
+      }
+
+      .size-option label {
+         display: block;
+         padding: 10px 20px;
+         border: 2px solid #ddd;
+         border-radius: 25px;
+         background: white;
+         cursor: pointer;
+         transition: all 0.3s ease;
+         text-align: center;
+         min-width: 80px;
+      }
+
+      .size-option input[type="radio"]:checked+label {
+         background: #ff6b35;
+         color: white;
+         border-color: #ff6b35;
+      }
+
+      .addon-options {
+         display: grid;
+         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+         gap: 10px;
+      }
+
+      .addon-item {
+         display: flex;
+         align-items: center;
+         padding: 10px;
+         background: white;
+         border: 1px solid #ddd;
+         border-radius: 8px;
+         transition: all 0.3s ease;
+      }
+
+      .addon-item:hover {
+         border-color: #ff6b35;
+         background: #fff5f0;
+      }
+
+      .addon-item input[type="checkbox"]:checked+label {
+         color: #ff6b35;
+         font-weight: bold;
+      }
+
+      .quantity-section {
+         display: flex;
+         align-items: center;
+         gap: 15px;
+         margin-bottom: 20px;
+      }
+
+      .quantity-controls {
+         display: flex;
+         align-items: center;
+         border: 2px solid #ddd;
+         border-radius: 50px;
+         overflow: hidden;
+      }
+
+      .quantity-controls .btn {
+         border: none;
+         background: #f8f9fa;
+         width: 45px;
+         height: 45px;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         transition: all 0.3s ease;
+      }
+
+      .quantity-controls .btn:hover {
+         background: #ff6b35;
+         color: white;
+      }
+
+      .quantity-controls input {
+         border: none;
+         width: 60px;
+         text-align: center;
+         height: 45px;
+         font-weight: bold;
+      }
+
+      .total-price-section {
+         background: #e8f5e8;
+         padding: 15px;
+         border-radius: 10px;
+         text-align: center;
+         margin-bottom: 20px;
+      }
+
+      .total-price {
+         font-size: 1.8rem;
+         font-weight: bold;
+         color: #28a745;
+      }
+
+      .action-buttons {
+         display: grid;
+         grid-template-columns: 1fr 1fr;
+         gap: 15px;
+         margin-bottom: 20px;
+      }
+
+      .btn-add-cart {
+         background: linear-gradient(135deg, #28a745, #20c997);
+         border: none;
+         padding: 15px;
+         border-radius: 12px;
+         color: white;
+         font-weight: bold;
+         font-size: 1.1rem;
+         transition: all 0.3s ease;
+      }
+
+      .btn-add-cart:hover {
+         background: linear-gradient(135deg, #20c997, #28a745);
+         transform: translateY(-2px);
+         box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+      }
+
+      .btn-buy-now {
+         background: linear-gradient(135deg, #ff6b35, #f7931e);
+         border: none;
+         padding: 15px;
+         border-radius: 12px;
+         color: white;
+         font-weight: bold;
+         font-size: 1.1rem;
+         transition: all 0.3s ease;
+      }
+
+      .btn-buy-now:hover {
+         background: linear-gradient(135deg, #f7931e, #ff6b35);
+         transform: translateY(-2px);
+         box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+      }
+
+      .secondary-actions {
+         display: flex;
+         gap: 10px;
+         justify-content: center;
+      }
+
+      .related-products {
+         margin-top: 50px;
+      }
+
+      .related-product-card {
+         transition: transform 0.3s ease;
+         border: none;
+         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .related-product-card:hover {
+         transform: translateY(-5px);
+         box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .reviews-section {
+         background: white;
+         padding: 25px;
+         border-radius: 15px;
+         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+         margin-top: 30px;
+      }
+
+      .review-item {
+         border-bottom: 1px solid #eee;
+         padding: 15px 0;
+      }
+
+      .review-item:last-child {
+         border-bottom: none;
+      }
+
+      .product-price-update {
+         animation: priceUpdate 0.5s ease;
+      }
+
+      @keyframes priceUpdate {
+         0% {
+            transform: scale(1);
+         }
+
+         50% {
+            transform: scale(1.1);
+         }
+
+         100% {
+            transform: scale(1);
+         }
+      }
+
+      @media (max-width: 768px) {
+         .action-buttons {
+            grid-template-columns: 1fr;
+         }
+
+         .product-title {
+            font-size: 1.5rem;
+         }
+
+         .current-price {
+            font-size: 2rem;
+         }
+      }
+   </style>
+</head>
+
+<body>
+   <div th:replace="~{fragments/layout :: navbar}"></div>
+
+   <div class="container py-4">
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mb-4">
+         <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/products}" class="text-decoration-none">Products</a></li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${product?.name ?: 'Classic Burger'}">
+               Classic Burger</li>
+         </ol>
+      </nav>
+
+      <div class="row">
+         <!-- Product Images -->
+         <div class="col-lg-6 mb-4">
+            <div class="product-image-container">
+               <img th:src="@{'/' + ${product.imageUrl}}" alt="Product Image" class="main-product-image"
+                  id="mainProductImage" data-bs-toggle="modal" data-bs-target="#imageModal">
+            </div>
+         </div>
+
+         <!-- Product Information (nằm bên phải) -->
+         <div class="col-lg-6">
+            <div class="product-info">
+               <div class="price-section">
+                  <div class="current-price" th:text="'$' + ${product?.price ?: '8.9'}">$5.99</div>
+                  <div class="original-price">$8.95</div>
+                  <small>25% off today!</small>
+               </div>
+
+               <div class="product-description mb-4">
+                  <p th:text="${product.description}">Juicy beef burger with cheese</p>
+               </div>
+
+               <form onsubmit="addToCartDetail(event)">
+                  <input type="hidden" name="productId" id="productId" th:value="${product.id}" />
+
+                  <div class="quantity-section">
+                     <label class="form-label fw-bold">Quantity:</label>
+                     <div class="quantity-controls">
+                        <button type="button" class="btn" onclick="decreaseQuantity()">
+                           <i class="fas fa-minus"></i>
+                        </button>
+                        <input type="number" id="quantity" name="quantity" value="1" min="1"
+                           th:max="${product.stockQuantity}" class="form-control">
+                        <button type="button" class="btn" onclick="increaseQuantity()">
+                           <i class="fas fa-plus"></i>
+                        </button>
+                     </div>
+                  </div>
+
+                  <div class="total-price-section">
+                     <div class="total-price" id="totalPrice" th:text="'$' + ${product?.price}">$5.99</div>
+                     <small class="text-muted">Total</small>
+                  </div>
+
+                  <form onsubmit="addToCartDetail(event)" sec:authorize="!hasRole('MANAGER')">
+                     <input type="hidden" id="productId" value="[[${product.id}]]">
+                     <button type="submit" class="btn btn-add-cart">Add to Cart</button>
+                  </form>
+               </form>
+            </div>
+         </div>
+      </div>
+
+
+      <!-- Product Details Tabs -->
+      <div class="row mt-5">
+         <div class="col-12">
+            <ul class="nav nav-tabs" id="productTabs" role="tablist">
+
+               <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button"
+                     role="tab">
+                     <i class="fas fa-comments me-2"></i>Reviews
+                  </button>
+               </li>
+            </ul>
+
+            <div class="tab-content" id="productTabsContent">
+               <!-- Description Tab -->
+               <!-- Ingredients Tab -->
+               <!-- Nutrition Tab -->
+               <!-- Reviews Tab -->
+               <div class="tab-pane fade" id="reviews" role="tabpanel">
+                  <div class="reviews-section">
+                     <!-- Review Summary -->
+                     <div class="row mb-4">
+                        <div class="col-md-4 text-center">
+                           <div class="display-4 text-warning" th:text="${#numbers.formatDecimal(averageRating, 1, 1)}">
+                              4.0</div>
+                           <div class="rating-stars text-warning fs-5">
+                              <i class="fas fa-star"
+                                 th:each="i : ${#numbers.sequence(1, T(java.lang.Math).floor(averageRating))}"></i>
+                              <span th:if="${T(java.lang.Math).floor(averageRating) < 5}">
+                                 <i class="far fa-star"
+                                    th:each="i : ${#numbers.sequence(1, 5 - T(java.lang.Math).floor(averageRating))}"></i>
+                              </span>
+                           </div>
+                           <div class="text-muted" th:text="${reviewCount + ' reviews'}">128 reviews</div>
+                        </div>
+
+                        <div class="col-md-8">
+                           <div class="mb-2" th:each="i : ${#numbers.sequence(5, 1)}">
+                              <span class="me-2" th:text="${i + '⭐'}">5⭐</span>
+                              <div class="progress d-inline-block" style="width: 200px;">
+                                 <div class="progress-bar"
+                                    th:style="'width: ' + ${#vars['star' + i + 'Percent']} + '%'">
+                                 </div>
+                                 <span class="ms-2" th:text="${#vars['star' + i + 'Percent'] + '%'}">60%</span>
+                              </div>
+                           </div>
+                        </div>
+
+
+                        <!-- Individual Reviews -->
+                        <div th:each="review : ${reviews}" class="review-item">
+                           <div class="d-flex justify-content-between align-items-start mb-2">
+                              <div>
+                                 <strong th:text="${review.user.fullName}">Username</strong>
+                                 <div class="rating-stars text-warning">
+                                    <i class="fas fa-star" th:each="i : ${#numbers.sequence(1, review.rating)}"></i>
+                                    <span th:if="${review.rating < 5}">
+                                       <i class="far fa-star"
+                                          th:each="i : ${#numbers.sequence(1, 5 - review.rating)}"></i>
+                                    </span>
+                                 </div>
+                              </div>
+                              <small class="text-muted"
+                                 th:text="${#temporals.format(review.createdAt, 'dd MMM yyyy')}">Date</small>
+                           </div>
+                           <p th:text="${review.comment}">Comment</p>
+
+                           <!-- Admin reply section -->
+                           <div class="bg-light border-start border-4 border-warning ps-3 py-2 mt-2 rounded"
+                              th:if="${review.reply != null}">
+                              <strong class="text-warning">Admin replied:</strong>
+                              <p class="mb-0" th:text="${review.reply}">Thanks for your feedback!</p>
+                           </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                           <button class="btn btn-outline-primary" onclick="loadMoreReviews(event)">
+                              <i class="fas fa-chevron-down me-2"></i>Load More Reviews
+                           </button>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+
+      <!-- Image Modal -->
+      <div class="modal fade" id="imageModal" tabindex="-1">
+         <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+               <div class="modal-header border-0">
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+               </div>
+               <div class="modal-body p-0">
+                  <img id="modalImage" src="/images/burger1.svg" alt="Product Image" class="img-fluid w-100">
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <div th:replace="~{fragments/layout :: footer}"></div>
+
+      <!-- Bootstrap JS -->
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+      <!-- Custom JS -->
+      <script th:src="@{/js/app.js}"></script>
+      <script th:src="@{/js/product-detail.js}"></script>
+
+      <script>
+         console.log('🔍 Debug: Checking function availability...');
+
+         document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(() => {
+               console.log('- addToCart function exists:', typeof addToCart === 'function');
+               console.log('- buyNow function exists:', typeof buyNow === 'function');
+               console.log('- increaseQuantity function exists:', typeof increaseQuantity === 'function');
+               console.log('- decreaseQuantity function exists:', typeof decreaseQuantity === 'function');
+               console.log('- toggleWishlist function exists:', typeof toggleWishlist === 'function');
+               console.log('- shareProduct function exists:', typeof shareProduct === 'function');
+               console.log('- writeReview function exists:', typeof writeReview === 'function');
+
+               console.log('🔍 Debug: Checking DOM elements...');
+               console.log('- quantity input:', document.getElementById('quantity'));
+               console.log('- total price element:', document.getElementById('totalPrice'));
+               console.log('- add to cart button:', document.getElementById('addToCartBtn'));
+               console.log('- main product image:', document.getElementById('mainProductImage'));
+
+               console.log('🔍 Debug: Testing event listeners...');
+               const sizeRadios = document.querySelectorAll('input[name="size"]');
+               console.log('- Size radios found:', sizeRadios.length);
+
+               const addonCheckboxes = document.querySelectorAll('.addon-options input[type="checkbox"]');
+               console.log('- Addon checkboxes found:', addonCheckboxes.length);
+
+               console.log('✅ Debug check completed!');
+            }, 1000);
+         });
+
+         function changeMainImage(src) {
+            const mainImage = document.getElementById('mainProductImage');
+            if (mainImage) {
+               mainImage.src = src;
+
+               mainImage.style.opacity = '0.7';
+               setTimeout(() => {
+                  mainImage.style.opacity = '1';
+               }, 150);
+
+               console.log('🖼️ Main image changed to:', src);
+            }
+         }
+         function changeDetail(element) {
+            const imageUrl = element.getAttribute("data-imageurl");
+            const name = element.getAttribute("data-name");
+            const description = element.getAttribute("data-description");
+            const price = element.getAttribute("data-price");
+
+            // Cập nhật ảnh lớn và thông tin
+            document.getElementById("main-image").src = imageUrl;
+            document.getElementById("main-name").innerText = name;
+            document.getElementById("main-description").innerText = description;
+            document.getElementById("main-price").innerText = price + ' $';
+         }
+
+
+         window.testQuantity = function () {
+            console.log('🧪 Testing quantity functions...');
+            increaseQuantity();
+            setTimeout(() => decreaseQuantity(), 500);
+         };
+
+         window.testPriceCalculation = function () {
+            console.log('🧪 Testing price calculation...');
+            document.querySelector('#size-large').click();
+            setTimeout(() => document.querySelector('#addon-cheese').click(), 500);
+            setTimeout(() => document.querySelector('#addon-bacon').click(), 1000);
+         };
+
+         window.testActions = function () {
+            console.log('🧪 Testing action buttons...');
+            console.log('Call addToCart(), buyNow(), toggleWishlist(), shareProduct() manually');
+         };
+      </script>
+      <script>
+         function addToCartDetail(event) {
+            event.preventDefault();
+
+            const productId = document.getElementById("productId").value;
+            const quantity = document.getElementById("quantity").value;
+
+            fetch("/cart/add", {
+               method: "POST",
+               headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+               },
+               body: new URLSearchParams({
+                  productId: productId,
+                  quantity: quantity,
+               }),
+            })
+               .then((response) => {
+                  if (!response.ok) {
+                     throw new Error("Not authorized");
+                  }
+                  return response.text();
+               })
+               .then((data) => {
+                  showNotification("✅ " + data, "success");
+
+
+                  setTimeout(() => location.reload(), 500);
+               })
+               .catch((error) => {
+                  console.error("Add to cart failed:", error);
+                  showNotification("❌ Error adding to cart", "error");
+               });
+         }
+      </script>
+
+</body>
+
+</html>

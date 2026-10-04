@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="fragments/layout :: head">
+    <title>Home - FastFood App</title>
+  </head>
+
+  <body>
+    <!-- Navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section bg-primary text-white py-5">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-6">
+            <h1 class="display-4 fw-bold">FastFood App</h1>
+            <p class="lead">
+              Order fast food online - Quick, convenient, and delicious!
+            </p>
+            <a th:href="@{/products}" class="btn btn-warning btn-lg">
+              <i class="fas fa-shopping-cart me-2"></i>Order Now
+            </a>
+          </div>
+          <div class="col-lg-6 text-center">
+            <i
+              class="fas fa-hamburger"
+              style="font-size: 10rem; opacity: 0.1"
+            ></i>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section py-5">
+      <div class="container">
+        <div class="row text-center">
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body">
+                <i
+                  class="fas fa-clock text-primary mb-3"
+                  style="font-size: 3rem"
+                ></i>
+                <h5 class="card-title">Fast Delivery</h5>
+                <p class="card-text">Delivery within 30 minutes</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body">
+                <i
+                  class="fas fa-star text-warning mb-3"
+                  style="font-size: 3rem"
+                ></i>
+                <h5 class="card-title">High Quality</h5>
+                <p class="card-text">Fresh and guaranteed quality food</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="card-body">
+                <i
+                  class="fas fa-money-bill-wave text-success mb-3"
+                  style="font-size: 3rem"
+                ></i>
+                <h5 class="card-title">Affordable Prices</h5>
+                <p class="card-text">Reasonable prices for everyone</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Popular Products Section -->
+    <section class="popular-products py-5 bg-light">
+      <div class="container">
+        <h2 class="text-center mb-5">Featured Products</h2>
+        <div th:if="${#lists.isEmpty(products)}" class="text-center"></div>
+
+        <div
+          id="productCarousel"
+          class="carousel slide"
+          data-bs-ride="carousel"
+        >
+          <div class="carousel-inner">
+            <th:block th:each="group, iter : ${productGroups}">
+              <div
+                class="carousel-item"
+                th:classappend="${iter.index == 0} ? 'active'"
+              >
+                <div class="row">
+                  <div class="col-md-4" th:each="product : ${group}">
+                    <div class="card h-100 product-card">
+                      <a th:href="@{/products/{id}(id=${product.id})}">
+                        <img
+                          th:src="@{'/' + ${product.imageUrl}}"
+                          alt="Product Image"
+                          class="card-img-top"
+                          style="height: 200px; object-fit: cover"
+                        />
+                      </a>
+                      <div class="card-body">
+                        <h5 class="card-title">
+                          <a
+                            th:href="@{/products/{id}(id=${product.id})}"
+                            class="text-decoration-none text-dark"
+                            th:text="${product.name}"
+                          ></a>
+                        </h5>
+                        <p
+                          class="card-text text-muted"
+                          th:text="${product.description}"
+                        ></p>
+                        <div
+                          class="d-flex justify-content-between align-items-center"
+                        >
+                          <span
+                            class="h5 text-primary mb-0"
+                            th:text="${product.price} + '$'"
+                          ></span>
+                          <button
+                            class="btn btn-primary btn-sm add-to-cart"
+                            th:data-product-id="${product.id}"
+                            sec:authorize="!hasRole('MANAGER')"
+                          >
+                            <i class="fas fa-cart-plus"></i> Add
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </th:block>
+          </div>
+
+          <!-- Controls -->
+          <button
+            class="carousel-control-prev"
+            type="button"
+            data-bs-target="#productCarousel"
+            data-bs-slide="prev"
+            style="
+              top: 40%;
+              bottom: auto;
+              height: 40px;
+              width: 40px;
+              background-color: rgba(0, 0, 0, 0.2);
+              border-radius: 50%;
+              z-index: 1;
+            "
+          >
+            <span
+              class="carousel-control-prev-icon"
+              aria-hidden="true"
+              style="background-size: 100% 100%"
+            ></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button
+            class="carousel-control-next"
+            type="button"
+            data-bs-target="#productCarousel"
+            data-bs-slide="next"
+            style="
+              top: 40%;
+              bottom: auto;
+              height: 40px;
+              width: 40px;
+              background-color: rgba(0, 0, 0, 0.2);
+              border-radius: 50%;
+              z-index: 1;
+            "
+          >
+            <span
+              class="carousel-control-next-icon"
+              aria-hidden="true"
+              style="background-size: 100% 100%"
+            ></span>
+            <span class="visually-hidden">Next</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".add-to-cart").forEach((button) => {
+          button.addEventListener("click", function (event) {
+            event.stopPropagation();
+            const productId = this.getAttribute("data-product-id");
+
+            fetch("/cart/add", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: new URLSearchParams({
+                productId: productId,
+                quantity: 1,
+              }),
+            }).then((response) => {
+              if (response.redirected) {
+                window.location.href = response.url;
+              } else {
+                showNotification("Added to cart", "success");
+              }
+            });
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

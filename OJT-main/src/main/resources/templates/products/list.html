@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+  <head th:replace="fragments/layout :: head">
+    <title>Products - FastFood App</title>
+    <style>
+      .search-form input[type="search"]:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.15rem rgba(40, 167, 69, 0.25);
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+
+    <!-- Page Header -->
+    <section class="page-header bg-light py-4">
+      <div class="container">
+        <h1 class="h2 mb-0">
+          <i class="fas fa-pizza-slice me-2"></i>Product List
+        </h1>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+            <li class="breadcrumb-item active">Products</li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+    <div class="container d-flex justify-content-end my-3">
+      <form
+        class="search-form d-flex align-items-center"
+        th:action="@{/products}"
+        method="get"
+        style="
+          max-width: 420px;
+          width: 100%;
+          background-color: #ffffff;
+          padding: 8px 12px;
+          border-radius: 8px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+          border: 1px solid #ccc;
+        "
+      >
+        <input
+          type="search"
+          name="keyword"
+          class="form-control form-control-sm me-2"
+          style="border: none; outline: none; background-color: transparent"
+          placeholder="🔍 Search food..."
+          aria-label="Search"
+          th:value="${searchKeyword}"
+        />
+
+        <button type="submit" class="btn btn-outline-success btn-sm">
+          <i class="fas fa-search"></i>
+        </button>
+      </form>
+    </div>
+
+    <!-- Products Section -->
+    <section class="products-section py-5">
+      <div class="container">
+        <form id="filterForm" th:action="@{/products}" method="get">
+          <div class="row">
+            <!-- Sidebar Filter -->
+            <div class="col-md-3">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0">Filters</h5>
+                </div>
+                <div class="card-body">
+                  <!-- Category Filter -->
+                  <div class="mb-3">
+                    <h6>Categories</h6>
+                    <div class="form-check" th:each="category : ${categories}">
+                      <input
+                        class="form-check-input filter-checkbox"
+                        type="checkbox"
+                        th:id="'cat-' + ${category.id}"
+                        name="categories"
+                        th:value="${category.id}"
+                        th:checked="${selectedCategories != null and selectedCategories.contains(category.id)}"
+                      />
+                      <label
+                        class="form-check-label"
+                        th:for="'cat-' + ${category.id}"
+                        th:text="${category.name}"
+                        >Category Name</label
+                      >
+                    </div>
+                  </div>
+
+                  <!-- Price Range -->
+                  <div class="mb-3">
+                    <h6>Price Range</h6>
+                    <div class="form-check">
+                      <input
+                        class="form-check-input filter-radio"
+                        type="radio"
+                        name="priceRange"
+                        id="price1"
+                        value="under2$"
+                        th:checked="${selectedPriceRange == 'under2$'}"
+                      />
+                      <label class="form-check-label" for="price1"
+                        >Under $2</label
+                      >
+                    </div>
+                    <div class="form-check">
+                      <input
+                        class="form-check-input filter-radio"
+                        type="radio"
+                        name="priceRange"
+                        id="price2"
+                        value="2$-5$"
+                        th:checked="${selectedPriceRange == '2$-5$'}"
+                      />
+                      <label class="form-check-label" for="price2"
+                        >$2 - $5</label
+                      >
+                    </div>
+                    <div class="form-check">
+                      <input
+                        class="form-check-input filter-radio"
+                        type="radio"
+                        name="priceRange"
+                        id="price3"
+                        value="above5$"
+                        th:checked="${selectedPriceRange == 'above5$'}"
+                      />
+                      <label class="form-check-label" for="price3"
+                        >Above $5</label
+                      >
+                    </div>
+                    <div class="form-check">
+                      <input
+                        class="form-check-input filter-radio"
+                        type="radio"
+                        name="priceRange"
+                        id="priceAll"
+                        value=""
+                        th:checked="${selectedPriceRange == null or selectedPriceRange == ''}"
+                      />
+                      <label class="form-check-label" for="priceAll"
+                        >All Prices</label
+                      >
+                    </div>
+                  </div>
+
+                  <!-- Filter Buttons -->
+                  <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                      Apply Filters
+                    </button>
+                    <a th:href="@{/products}" class="btn btn-outline-secondary"
+                      >Clear All</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="col-md-9">
+              <!-- Sort and View Options -->
+              <div
+                class="d-flex justify-content-between align-items-center mb-4"
+              >
+                <div>
+                  <span
+                    class="text-muted"
+                    th:text="'Showing ' + ${products.size()} + ' products'"
+                  >
+                    Showing X products
+                  </span>
+                </div>
+                <div class="d-flex align-items-center">
+                  <label for="sortBy" class="form-label me-2 mb-0"
+                    >Sort by:</label
+                  >
+                  <select
+                    class="form-select me-2"
+                    id="sortBy"
+                    name="sortBy"
+                    style="width: auto"
+                    onchange="updateSort()"
+                  >
+                    <option
+                      value="default"
+                      th:selected="${selectedSortBy == 'default'}"
+                    >
+                      Default
+                    </option>
+                    <option
+                      value="price"
+                      th:selected="${selectedSortBy == 'price'}"
+                    >
+                      Price
+                    </option>
+                    <option
+                      value="name"
+                      th:selected="${selectedSortBy == 'name'}"
+                    >
+                      Name
+                    </option>
+                    <option
+                      value="created"
+                      th:selected="${selectedSortBy == 'created'}"
+                    >
+                      Newest
+                    </option>
+                  </select>
+                  <select
+                    class="form-select"
+                    id="sortDirection"
+                    name="sortDirection"
+                    style="width: auto"
+                    onchange="updateSort()"
+                  >
+                    <option
+                      value="asc"
+                      th:selected="${selectedSortDirection == 'asc'}"
+                    >
+                      Ascending
+                    </option>
+                    <option
+                      value="desc"
+                      th:selected="${selectedSortDirection == 'desc'}"
+                    >
+                      Descending
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Product Cards -->
+              <div class="row" th:if="${products}">
+                <div
+                  class="col-lg-4 col-md-6 mb-4"
+                  th:each="product : ${products}"
+                >
+                  <div class="card h-100 product-card">
+                    <a
+                      th:href="@{'/products/' + ${product.id}}"
+                      class="text-decoration-none"
+                    >
+                      <img
+                        th:src="@{'/' + ${product.imageUrl}}"
+                        alt="Product Image"
+                        class="card-img-top"
+                        style="height: 200px; object-fit: cover"
+                      />
+                    </a>
+                    <div class="card-body">
+                      <h5
+                        class="card-title text-dark"
+                        th:text="${product.name}"
+                      >
+                        Product Name
+                      </h5>
+                      <p
+                        class="card-text text-muted"
+                        th:text="${product.description}"
+                      >
+                        Product description
+                      </p>
+                      <div
+                        class="d-flex justify-content-between align-items-center"
+                      >
+                        <span
+                          class="h5 text-primary mb-0"
+                          th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}"
+                        >
+                          $0.00
+                        </span>
+                        <button
+                          class="btn btn-primary btn-sm add-to-cart"
+                          th:data-product-id="${product.id}"
+                        >
+                          <i class="fas fa-cart-plus"></i> Add
+                        </button>
+                      </div>
+                      <a
+                        th:href="@{'/products/' + ${product.id}}"
+                        class="btn btn-outline-success mt-3 w-100"
+                      >
+                        View Details
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- No Products Message -->
+              <div class="text-center" th:if="${products.size() == 0}">
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle"></i>
+                  No products found matching your criteria. Try adjusting your
+                  filters.
+                </div>
+              </div>
+
+              <!-- Pagination Placeholder -->
+
+              <th:block th:if="${searchKeyword != null}">
+                <!-- PHÂN TRANG KHI ĐANG SEARCH -->
+                <nav th:if="${page.totalPages > 1}">
+                  <ul class="pagination justify-content-center mt-4">
+                    <li
+                      class="page-item"
+                      th:classappend="${page.number == 0} ? 'disabled'"
+                    >
+                      <a
+                        class="page-link"
+                        th:href="@{/products/search(keyword=${searchKeyword}, page=${page.number - 1})}"
+                        >Previous</a
+                      >
+                    </li>
+
+                    <li
+                      class="page-item"
+                      th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                      th:classappend="${i == page.number} ? 'active'"
+                    >
+                      <a
+                        class="page-link"
+                        th:href="@{/products/search(keyword=${searchKeyword}, page=${i})}"
+                        th:text="${i + 1}"
+                        >1</a
+                      >
+                    </li>
+
+                    <li
+                      class="page-item"
+                      th:classappend="${page.number + 1 == page.totalPages} ? 'disabled'"
+                    >
+                      <a
+                        class="page-link"
+                        th:href="@{/products/search(keyword=${searchKeyword}, page=${page.number + 1})}"
+                        >Next</a
+                      >
+                    </li>
+                  </ul>
+                </nav>
+              </th:block>
+
+              <th:block th:unless="${searchKeyword != null}">
+                <!-- PHÂN TRANG CHO DANH SÁCH BÌNH THƯỜNG (KHÔNG SEARCH) -->
+                <nav th:if="${page.totalPages > 1}">
+                  <nav th:if="${page.totalPages > 1}">
+                    <ul class="pagination justify-content-center mt-4">
+                      <!-- Previous button -->
+                      <li
+                        class="page-item"
+                        th:classappend="${page.number == 0} ? 'disabled'"
+                      >
+                        <a
+                          class="page-link"
+                          th:href="@{/products(
+           page=${page.number - 1},
+           size=${page.size},
+           categories=${selectedCategories},
+           minPrice=${minPrice},
+           maxPrice=${maxPrice},
+           sortBy=${selectedSortBy},
+           sortDirection=${selectedSortDirection},
+           priceRange=${selectedPriceRange}
+         )}"
+                          >Previous</a
+                        >
+                      </li>
+
+                      <!-- Page numbers -->
+                      <li
+                        class="page-item"
+                        th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                        th:classappend="${i == page.number} ? 'active'"
+                      >
+                        <a
+                          class="page-link"
+                          th:href="@{/products(
+           page=${i},
+           size=${page.size},
+           categories=${selectedCategories},
+           minPrice=${minPrice},
+           maxPrice=${maxPrice},
+           sortBy=${selectedSortBy},
+           sortDirection=${selectedSortDirection},
+           priceRange=${selectedPriceRange}
+         )}"
+                          th:text="${i + 1}"
+                          >1</a
+                        >
+                      </li>
+
+                      <!-- Next button -->
+                      <li
+                        class="page-item"
+                        th:classappend="${page.number + 1 == page.totalPages} ? 'disabled'"
+                      >
+                        <a
+                          class="page-link"
+                          th:href="@{/products(
+           page=${page.number + 1},
+           size=${page.size},
+           categories=${selectedCategories},
+           minPrice=${minPrice},
+           maxPrice=${maxPrice},
+           sortBy=${selectedSortBy},
+           sortDirection=${selectedSortDirection},
+           priceRange=${selectedPriceRange}
+         )}"
+                          >Next</a
+                        >
+                      </li>
+                    </ul>
+                  </nav>
+                </nav>
+              </th:block>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+
+    <script>
+      // Auto-submit form when sort options change
+      function updateSort() {
+        document.getElementById("filterForm").submit();
+      }
+
+      // Auto-submit form when filters change (optional)
+      document.addEventListener("DOMContentLoaded", function () {
+        const filterCheckboxes = document.querySelectorAll(".filter-checkbox");
+        const filterRadios = document.querySelectorAll(".filter-radio");
+
+        // Uncomment the following if you want auto-submit on filter change
+        /*
+       filterCheckboxes.forEach(checkbox => {
+          checkbox.addEventListener('change', function() {
+             setTimeout(() => {
+                document.getElementById('filterForm').submit();
+             }, 300);
+          });
+       });
+       
+       filterRadios.forEach(radio => {
+          radio.addEventListener('change', function() {
+             setTimeout(() => {
+                document.getElementById('filterForm').submit();
+             }, 300);
+          });
+       });
+       */
+      });
+    </script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".add-to-cart").forEach((button) => {
+          button.addEventListener("click", function () {
+            const productId = this.getAttribute("data-product-id");
+
+            fetch("/cart/add", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: new URLSearchParams({
+                productId: productId,
+                quantity: 1,
+              }),
+            }).then((response) => {
+              if (response.redirected) {
+                window.location.href = response.url;
+              } else {
+                showNotification("Added to cart", "success");
+
+                location.reload();
+              }
+            });
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
